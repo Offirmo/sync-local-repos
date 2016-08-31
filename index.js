@@ -148,6 +148,9 @@ function update_git_related(repo_dir, options) {
 				.then(output => console.log(stylize_string.dim(`» git fetch for "${repo_dir}" =>\n${output}`)))
 		})
 		.then(() => {
+			if (is_repo_dirty)
+				return console.log(`  ${log_symbols.warning} "${repo_dir}" skipping git pull since repo is dirty`)
+
 			console.log(`  git pull for "${repo_dir}"`)
 			return get_command_output(`git`, {
 					params: 'pull'.split(' '),
