@@ -1,0 +1,18 @@
+{
+  "name": "sync-local-repos",
+  "private": true,
+  "description": "mass-sync a bunch of local repos",
+  "author": "Offirmo <offirmo.net@gmail.com>",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "test": "./index.js .. --dry-run"
+  },
+  "license": "Unlicense",
+  "dependencies": {
+    "@offirmo/cli-toolbox": "^0.0.4",
+    "babel-preset-es2015-node6": "^0.3.0",
+    "babel-cli": "^6.14.0",
+    "cross-spawn": "^4.0.0"
+  }
+}
