@@ -37,6 +37,7 @@ const cli = meow(`
 const repos_parent_dir = cli.input[0]
 const options = cli.flags
 const DEV_NPM_MODULES = []
+const DIRTY_REPOS = []
 
 console.log('* path:', repos_parent_dir)
 console.log('* options:', options)
@@ -51,6 +52,7 @@ Promise.all(
 )
 .then(res => {
 	console.log('Done.')
+	if (DIRTY_REPOS.length) console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(DIRTY_REPOS)))
 	console.log('will exit in 3s...')
 	setTimeout(() => process.exit(0), 3000)
 })
@@ -127,7 +129,10 @@ function update_git_related(repo_dir, options) {
 				params: 'diff-index --quiet HEAD --'.split(' '),
 				cwd: repo_dir
 			})
-			.catch(() => is_repo_dirty = true)
+			.catch(() => {
+				DIRTY_REPOS.push(repo_dir)
+				is_repo_dirty = true
+			})
 		})
 
 
@@ -178,6 +183,8 @@ function update_npm_related(mod_dir, options) {
 		.then(() => {
 			if (!_.isString(package_json.author) || !package_json.author.includes('Offirmo'))
 				return console.log(`  ${log_symbols.info} "${mod_dir}" skipping npm link since author != Offirmo`, package_json.author)
+
+			DEV_NPM_MODULES.push(package_json.name)
 
 			console.log(`  npm link for "${mod_dir}"`)
 			return get_command_output(`npm`, {

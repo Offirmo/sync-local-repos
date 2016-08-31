@@ -11,7 +11,7 @@ export default function get_command_output(
 	options.params = options.params || [];
 	options.timeout = options.timeout || 3000;
 	options.env = process.env;
-	options.verbose = true
+	//options.verbose = true
 	// options.merge_stderr
 
 	return new Promise((resolve, reject) => {
