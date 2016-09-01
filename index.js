@@ -129,14 +129,16 @@ function update_git_related(repo_dir, options) {
 				params: 'diff-index --quiet HEAD --'.split(' '),
 				cwd: repo_dir
 			})
-			.catch(() => {
+			.catch((err) => {
 				DIRTY_REPOS.push(repo_dir)
 				is_repo_dirty = true
+				console.log(`  "${repo_dir}" is dirty due to`, err)
 			})
 		})
 
 
 	const actions = observations
+		/*
 		.then(() => {
 			console.log(`  git fetch for "${repo_dir}"`)
 			return get_command_output(`git`, {
@@ -160,10 +162,10 @@ function update_git_related(repo_dir, options) {
 				})
 				.then(output => console.log(stylize_string.dim(`» git pull for "${repo_dir}" =>\n${output}`)))
 				.catch(err => {
-					if (err.message.includes('There is no tracking information')) { /* swallow */ return}
+					if (err.message.includes('There is no tracking information')) return // swallow
 					throw err
 				})
-		})
+		})*/
 
 	return actions
 }
@@ -183,7 +185,7 @@ function update_npm_related(mod_dir, options) {
 		})
 
 	const actions = observations
-		.then(() => {
+		/*.then(() => {
 			if (!_.isString(package_json.author) || !package_json.author.includes('Offirmo'))
 				return console.log(`  ${log_symbols.info} "${mod_dir}" skipping npm link since author != Offirmo`, package_json.author)
 
@@ -197,7 +199,7 @@ function update_npm_related(mod_dir, options) {
 					merge_stderr: true
 				})
 				.then(output => console.log(stylize_string.dim(output)))
-		})
+		})*/
 
 	return actions
 }
