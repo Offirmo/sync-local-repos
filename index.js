@@ -29,6 +29,8 @@ const cli = meow(`
 
     Options
       --dry-run  don't touch anything
+      --dry-git  don't do active git commands
+      --dry-npm  don't do active npm commands
 
     Examples
       $ ./index.js .. --dry-run
@@ -51,17 +53,21 @@ Promise.all(
 		.map(repo_dir => process_dir(repo_dir, options))
 )
 .then(res => {
-	console.log('Done.')
+	if (DEV_NPM_MODULES.length) console.log(`${log_symbols.warning} TOD link dev npm modules:\n` + stylize_string.red.bold(prettify_json(DEV_NPM_MODULES)))
+})
+.then(res => {
 	if (DIRTY_REPOS.length) console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(DIRTY_REPOS)))
+})
+.then(res => {
+	console.log('Done.')
 	console.log('will exit in 3s...')
 	setTimeout(() => process.exit(0), 3000)
 })
 .catch((err) => {
 	console.error(stylize_string.red.bold(log_symbols.error + prettify_json(err)))
-	cli.showHelp(1)
+	//cli.showHelp(1)
 	process.exit(1)
 })
-
 
 
 function process_dir(dir, options) {
@@ -138,8 +144,9 @@ function update_git_related(repo_dir, options) {
 
 
 	const actions = observations
-		/*
 		.then(() => {
+			if (options.dryGit)
+				return console.log(`  ${log_symbols.warning} "${repo_dir}" skipping git fetch due to dry git`)
 			console.log(`  git fetch for "${repo_dir}"`)
 			return get_command_output(`git`, {
 					params: 'fetch'.split(' '),
@@ -152,6 +159,8 @@ function update_git_related(repo_dir, options) {
 		.then(() => {
 			if (is_repo_dirty)
 				return console.log(`  ${log_symbols.warning} "${repo_dir}" skipping git pull since repo is dirty`)
+			if (options.dryGit)
+				return console.log(`  ${log_symbols.warning} "${repo_dir}" skipping git pull due to dry git`)
 
 			console.log(`  git pull for "${repo_dir}"`)
 			return get_command_output(`git`, {
@@ -165,7 +174,7 @@ function update_git_related(repo_dir, options) {
 					if (err.message.includes('There is no tracking information')) return // swallow
 					throw err
 				})
-		})*/
+		})
 
 	return actions
 }
@@ -185,9 +194,11 @@ function update_npm_related(mod_dir, options) {
 		})
 
 	const actions = observations
-		/*.then(() => {
+			.then(() => {
 			if (!_.isString(package_json.author) || !package_json.author.includes('Offirmo'))
 				return console.log(`  ${log_symbols.info} "${mod_dir}" skipping npm link since author != Offirmo`, package_json.author)
+			if (options.dryNpm)
+				return console.log(`  ${log_symbols.warning} "${mod_dir}" skipping npm link due to dry npm`)
 
 			DEV_NPM_MODULES.push(package_json.name)
 
@@ -199,7 +210,7 @@ function update_npm_related(mod_dir, options) {
 					merge_stderr: true
 				})
 				.then(output => console.log(stylize_string.dim(output)))
-		})*/
+		})
 
 	return actions
 }

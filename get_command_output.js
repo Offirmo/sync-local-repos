@@ -11,7 +11,7 @@ export default function get_command_output(
 	options.params = options.params || [];
 	options.timeout = options.timeout || 3000;
 	options.env = process.env;
-	options.verbose = true
+	//options.verbose = true
 	// options.merge_stderr
 
 	return new Promise((resolve, reject) => {
@@ -19,7 +19,7 @@ export default function get_command_output(
 		const spawn_instance = spawn(executable, options.params, options);
 		const radix = 'Spawn#' + spawn_instance.pid;
 
-		options.verbose && console.log(`${radix}: spawned ${executable} ${options.params.join(' ') || ''}${options.cwd ? ' @' + options.cwd : ''}`,  );
+		console.log(`${radix}: spawned ${executable} ${options.params.join(' ') || ''}${options.cwd ? ' @' + options.cwd : ''}`,  );
 
 		let stdout = ""
 		let stderr = ""
@@ -31,11 +31,15 @@ export default function get_command_output(
 
 			if (err) {
 				err.message = err.message + ' [err]' + stderr + ' [out]' + stdout
+				console.error(`${radix}: ended on error`, err);
 				return reject(err)
 			}
 
-			if (stderr)
-				return reject(new Error('got stderr:' + stderr + ' [out]' + stdout))
+			if (stderr) {
+				const err = new Error('got stderr:' + stderr + ' [out]' + stdout)
+				console.error(`${radix}: ended on error`, err);
+				return reject(err)
+			}
 
 			resolve(stdout.trim())
 		}
