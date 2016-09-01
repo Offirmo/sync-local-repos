@@ -141,6 +141,7 @@ function update_git_related(repo_dir, options) {
 				console.log(`  "${repo_dir}" is dirty due to`, err)
 			})
 		})
+	//git log origin/master..master
 
 
 	const actions = observations
