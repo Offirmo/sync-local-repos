@@ -211,6 +211,7 @@ function update_npm_related(mod_dir, options) {
 					merge_stderr: true
 				})
 				.then(output => console.log(stylize_string.dim(output)))
+				.catch(err => console.log(`  npm link for "${mod_dir}" failed but don't really care`))
 		})
 
 	return actions
