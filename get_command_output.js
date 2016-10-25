@@ -1,18 +1,14 @@
 // share code executing a command and returning its output
 
 import spawn from 'cross-spawn';
-//const spawn = require('child_process').spawn
 
-export default function get_command_output(
-	executable,
-	options
-) {
+export default function get_command_output(executable, options) {
 	options = options || {};
 	options.params = options.params || [];
 	options.timeout = options.timeout || 3000;
 	options.env = process.env;
 	//options.verbose = true
-	// options.merge_stderr
+	//options.merge_stderr
 
 	return new Promise((resolve, reject) => {
 		options.verbose && console.log(`Spawn : spawning ${executable}`, options.params.join(' ') || '' );
