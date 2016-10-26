@@ -2,7 +2,7 @@
 ':' //# http://sambal.org/?p=1014 ; exec `dirname $0`/node_modules/.bin/babel-node "$0" "$@"
 'use strict';
 
-import get_command_output from './get_command_output';
+import { execute_and_throw } from './get_command_output';
 
 
 console.log('Hello world !')
@@ -38,8 +38,9 @@ const cli = meow(`
 
 const repos_parent_dir = cli.input[0]
 const options = cli.flags
-const DEV_NPM_MODULES = []
-const DIRTY_REPOS = []
+const dev_npm_modules = []
+const dirty_repos = []
+const non_master_repos = []
 
 console.log('* path:', repos_parent_dir)
 console.log('* options:', options)
@@ -49,14 +50,17 @@ REPO_DIRS = fs.lsDirs(repos_parent_dir).map(repo_dir => path.join(repos_parent_d
 console.log('* Processing repos...')
 Promise.all(
 	REPO_DIRS
-		//.slice(0, 1)
+		//.slice(1, 2) // DEBUG
 		.map(repo_dir => process_dir(repo_dir, options))
 )
 .then(res => {
-	if (DEV_NPM_MODULES.length) console.log(`${log_symbols.warning} TOD link dev npm modules:\n` + stylize_string.red.bold(prettify_json(DEV_NPM_MODULES)))
+	if (dev_npm_modules.length) console.log(`${log_symbols.warning} TODO link dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
 })
 .then(res => {
-	if (DIRTY_REPOS.length) console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(DIRTY_REPOS)))
+	if (dirty_repos.length) console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(dirty_repos)))
+})
+.then(res => {
+	if (non_master_repos.length) console.log(`${log_symbols.warning} You have non-master repos:\n` + stylize_string.yellow.bold(prettify_json(non_master_repos)))
 })
 .then(res => {
 	console.log('Done.')
@@ -78,16 +82,16 @@ function process_dir(dir, options) {
 
 	const preconditions = Promise.resolve(true)
 		.then(() => {
-			console.log(`  Checking if git repo: "${dir}"`)
-			return get_command_output(`test`, {
+			console.log(`  Checking if is a git repo: "${dir}"`)
+			return execute_and_throw(`test`, {
 				params: '-d .git'.split(' '),
 				cwd: dir
 			})
 				.catch(() => is_git_repo = false)
 		})
 		.then(() => {
-			console.log(`  Checking if npm module: "${dir}"`)
-			return get_command_output(`test`, {
+			console.log(`  Checking if is an npm module: "${dir}"`)
+			return execute_and_throw(`test`, {
 				params: '-f package.json'.split(' '),
 				cwd: dir
 			})
@@ -115,30 +119,36 @@ function process_dir(dir, options) {
 
 
 function update_git_related(repo_dir, options) {
-	console.log('  update_git_related', tildify(repo_dir), options)
+	console.log('  update_git_related()', tildify(repo_dir), options)
 
-	let git_branch
+	let git_branch = ''
 	let is_repo_dirty = false
 
 	const observations = Promise.resolve(true)
 		.then(() => {
 			console.log(`  Checking git branch of "${repo_dir}"`)
-			return get_command_output(`git`, {
+			return execute_and_throw(`git`, {
 				params: 'rev-parse --abbrev-ref HEAD'.split(' '),
-				cwd: repo_dir
+				cwd: repo_dir,
 			})
-			.then(data => git_branch = data)
+			.then(({stdout}) => {
+				git_branch = stdout
+				console.log(stylize_string.dim(`  » git branch for "${repo_dir}" => "${git_branch}"`))
+				if (git_branch !== 'master') {
+					non_master_repos.push(`${repo_dir} -> branch "${git_branch}"`)
+				}
+			})
 		})
 		.then(() => {
 			console.log(`  Checking git dirtiness of "${repo_dir}"`)
-			return get_command_output(`git`, {
+			return execute_and_throw(`git`, {
 				params: 'diff-index --quiet HEAD --'.split(' '),
 				cwd: repo_dir
 			})
 			.catch((err) => {
-				DIRTY_REPOS.push(repo_dir)
+				dirty_repos.push(repo_dir)
 				is_repo_dirty = true
-				console.log(`  "${repo_dir}" is dirty due to`, err)
+				console.log(`  "${repo_dir}" is dirty due to`, err.message + '\n' + err.stderr)
 			})
 		})
 	//git log origin/master..master
@@ -149,13 +159,13 @@ function update_git_related(repo_dir, options) {
 			if (options.dryGit)
 				return console.log(`  ${log_symbols.warning} "${repo_dir}" skipping git fetch due to dry git`)
 			console.log(`  git fetch for "${repo_dir}"`)
-			return get_command_output(`git`, {
+			return execute_and_throw(`git`, {
 					params: 'fetch'.split(' '),
 					//stdio: ['pipe', process.stdout, 'pipe' ],
 					cwd: repo_dir,
 					merge_stderr: true
 				})
-				.then(output => console.log(stylize_string.dim(`» git fetch for "${repo_dir}" =>\n${output}`)))
+				.then(({stdout}) => console.log(stylize_string.dim(`  » git fetch for "${repo_dir}" => "${stdout}"`)))
 		})
 		.then(() => {
 			if (is_repo_dirty)
@@ -164,13 +174,13 @@ function update_git_related(repo_dir, options) {
 				return console.log(`  ${log_symbols.warning} "${repo_dir}" skipping git pull due to dry git`)
 
 			console.log(`  git pull for "${repo_dir}"`)
-			return get_command_output(`git`, {
+			return execute_and_throw(`git`, {
 					params: 'pull'.split(' '),
 					//stdio: ['pipe', process.stdout, 'pipe' ],
 					cwd: repo_dir,
 					merge_stderr: true
 				})
-				.then(output => console.log(stylize_string.dim(`» git pull for "${repo_dir}" =>\n${output}`)))
+				.then(({stdout}) => console.log(stylize_string.dim(`  » git pull for "${repo_dir}" => "${stdout}"`)))
 				.catch(err => {
 					if (err.message.includes('There is no tracking information')) return // swallow
 					throw err
@@ -182,7 +192,7 @@ function update_git_related(repo_dir, options) {
 
 
 function update_npm_related(mod_dir, options) {
-	console.log('  update_npm_related', tildify(mod_dir), options)
+	console.log('  update_npm_related()', tildify(mod_dir), options)
 
 	const package_json_path = path.join(mod_dir, 'package.json')
 	let package_json
@@ -201,16 +211,16 @@ function update_npm_related(mod_dir, options) {
 			if (options.dryNpm)
 				return console.log(`  ${log_symbols.warning} "${mod_dir}" skipping npm link due to dry npm`)
 
-			DEV_NPM_MODULES.push(package_json.name)
+			dev_npm_modules.push(package_json.name)
 
 			console.log(`  npm link for "${mod_dir}"`)
-			return get_command_output(`npm`, {
+			return execute_and_throw(`npm`, {
 					params: 'link'.split(' '),
 					//stdio: ['pipe', process.stdout, 'pipe' ],
 					cwd: mod_dir,
 					merge_stderr: true
 				})
-				.then(output => console.log(stylize_string.dim(output)))
+				.then(({stdout}) => console.log(stylize_string.dim(stdout)))
 				.catch(err => console.log(`  npm link for "${mod_dir}" failed but don't really care`))
 		})
 
