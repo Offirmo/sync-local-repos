@@ -55,6 +55,7 @@ function execute(executable, options) {
 					result.err = err
 					result.err.spawned_command_full = result.spawned_command_full
 					result.err.stderr = result.stderr
+					result.err.stdout = result.stdout
 					options.verbose && logger.error(`${logradix}: ended on error\n"${result.spawned_command}"`, err)
 				}
 				else {

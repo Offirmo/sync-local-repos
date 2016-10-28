@@ -182,7 +182,7 @@ function update_git_related(repo_dir, options) {
 				})
 				.then(({stdout}) => console.log(stylize_string.dim(`  » git pull for "${repo_dir}" => "${stdout}"`)))
 				.catch(err => {
-					if (err.message.includes('There is no tracking information')) return // swallow
+					if (err.stdout.includes('There is no tracking information')) return // swallow
 					throw err
 				})
 		})
