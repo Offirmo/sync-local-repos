@@ -21,7 +21,10 @@ const tildify = require('@offirmo/cli-toolbox/string/tildify')
 
 require('@offirmo/cli-toolbox/stdout/clear-cli')()
 
-let REPO_DIRS = []
+const STANDARD_BRANCHES = [
+	'master',
+	'gh-pages',
+]
 
 const cli = meow(`
     Usage
@@ -38,18 +41,19 @@ const cli = meow(`
 
 const repos_parent_dir = cli.input[0]
 const options = cli.flags
+let repo_dirs = []
 const dev_npm_modules = []
 const dirty_repos = []
-const non_master_repos = []
+const repos_with_nonstandard_branch = []
 
 console.log('* path:', repos_parent_dir)
 console.log('* options:', options)
 
 console.log('* Gathering list of repos...')
-REPO_DIRS = fs.lsDirs(repos_parent_dir).map(repo_dir => path.join(repos_parent_dir, repo_dir))
+repo_dirs = fs.lsDirs(repos_parent_dir).map(repo_dir => path.join(repos_parent_dir, repo_dir))
 console.log('* Processing repos...')
 Promise.all(
-	REPO_DIRS
+	repo_dirs
 		//.slice(1, 2) // DEBUG
 		.map(repo_dir => process_dir(repo_dir, options))
 )
@@ -60,7 +64,7 @@ Promise.all(
 	if (dirty_repos.length) console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(dirty_repos)))
 })
 .then(res => {
-	if (non_master_repos.length) console.log(`${log_symbols.warning} You have non-master repos:\n` + stylize_string.yellow.bold(prettify_json(non_master_repos)))
+	if (repos_with_nonstandard_branch.length) console.log(`${log_symbols.warning} You have repos in a branch:\n` + stylize_string.yellow.bold(prettify_json(repos_with_nonstandard_branch)))
 })
 .then(res => {
 	console.log('Done.')
@@ -134,8 +138,8 @@ function update_git_related(repo_dir, options) {
 			.then(({stdout}) => {
 				git_branch = stdout
 				console.log(stylize_string.dim(`  » git branch for "${repo_dir}" => "${git_branch}"`))
-				if (git_branch !== 'master') {
-					non_master_repos.push(`${repo_dir} -> branch "${git_branch}"`)
+				if (!STANDARD_BRANCHES.includes(git_branch)) {
+					repos_with_nonstandard_branch.push(`${repo_dir} -> branch "${git_branch}"`)
 				}
 			})
 		})
