@@ -1,7 +1,8 @@
 # logs
 npm-debug.log*
 npm-debug.log
+yarn-error.log
 
 # Dependencie
-yarn.lock
 node_modules
+yarn.lock
