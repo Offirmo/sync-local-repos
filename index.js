@@ -137,7 +137,7 @@ function update_git_related(repo_dir, options) {
 			})
 			.then(({stdout}) => {
 				git_branch = stdout
-				console.log(stylize_string.dim(`  » git branch for "${repo_dir}" => "${git_branch}"`))
+				console.log(stylize_string.dim(`  » git branch for "${repo_dir}" is "${git_branch}"`))
 				if (!STANDARD_BRANCHES.includes(git_branch)) {
 					repos_with_nonstandard_branch.push(`${repo_dir} -> branch "${git_branch}"`)
 				}
@@ -152,7 +152,7 @@ function update_git_related(repo_dir, options) {
 			.catch((err) => {
 				dirty_repos.push(repo_dir)
 				is_repo_dirty = true
-				console.log(`  "${repo_dir}" is dirty due to`, err.message + '\n' + err.stderr)
+				console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" is dirty due to "${err.message}"\n${err.stderr}`))
 			})
 		})
 	//git log origin/master..master
@@ -169,7 +169,10 @@ function update_git_related(repo_dir, options) {
 					cwd: repo_dir,
 					merge_stderr: true
 				})
-				.then(({stdout}) => console.log(stylize_string.dim(`  » git fetch for "${repo_dir}" => "${stdout}"`)))
+				.then(({stdout}) => {if (stdout) console.log(stylize_string.dim(`  » git fetch for "${repo_dir}" => "${stdout}"`))})
+				.catch((err) => {
+					console.log(stylize_string.red.bold(`  ${log_symbols.warning} "${repo_dir}" couldn't be fetched due to "${err.message}"\n${err.stderr}`))
+				})
 		})
 		.then(() => {
 			if (is_repo_dirty)
@@ -184,10 +187,10 @@ function update_git_related(repo_dir, options) {
 					cwd: repo_dir,
 					merge_stderr: true
 				})
-				.then(({stdout}) => console.log(stylize_string.dim(`  » git pull for "${repo_dir}" => "${stdout}"`)))
+				.then(({stdout}) => {if (stdout) console.log(stylize_string.dim(`  » git pull for "${repo_dir}" => "${stdout}"`))})
 				.catch(err => {
 					if (err.stdout.includes('There is no tracking information')) return // swallow
-					throw err
+					console.log(stylize_string.red.bold(`  ${log_symbols.warning} "${repo_dir}" couldn't be pulled due to "${err.message}"\n${err.stderr}`))
 				})
 		})
 
@@ -224,8 +227,8 @@ function update_npm_related(mod_dir, options) {
 					cwd: mod_dir,
 					merge_stderr: true
 				})
-				.then(({stdout}) => console.log(stylize_string.dim(stdout)))
-				.catch(err => console.log(`  npm link for "${mod_dir}" failed but don't really care`))
+				.then(({stdout}) => {if (stdout) console.log(stylize_string.dim(stdout))})
+				.catch(err => console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} npm link for "${mod_dir}" failed but don't really care`)))
 		})
 
 	return actions
