@@ -41,6 +41,7 @@ const cli = meow(`
 
 const repos_parent_dir = cli.input[0]
 const options = cli.flags
+options.depth = 0
 let repo_dirs = []
 const dev_npm_modules = []
 const dirty_repos = []
@@ -91,7 +92,7 @@ function process_dir(dir, options) {
 				params: '-d .git'.split(' '),
 				cwd: dir
 			})
-				.catch(() => is_git_repo = false)
+			.catch(() => is_git_repo = false)
 		})
 		.then(() => {
 			console.log(`  Checking if is an npm module: "${dir}"`)
@@ -104,18 +105,31 @@ function process_dir(dir, options) {
 
 		const actions = preconditions
 			.then(() => {
-				if (!is_git_repo)
+				if (!is_git_repo) {
+					// let's recurse
+					if (options.depth < 1) {
+						const subdirs = fs.lsDirs(dir).map(repo_dir => path.join(dir, repo_dir))
+						const sub_options = Object.assign({}, options, {depth: options.depth +1})
+						return Promise.all(
+							subdirs
+							.map(repo_dir => process_dir(repo_dir, sub_options))
+						)
+					}
+
 					return console.log(`  ${log_symbols.info} "${dir}" skipping git operations since not a git repo`)
+				}
+
 				if (options.dryRun)
 					return console.log(`  ${log_symbols.warning} "${dir}" skipping git operations due to dry run`)
+
 				return update_git_related(dir, options)
-			})
-			.then(() => {
-				if (!is_npm_module)
-					return console.log(`  ${log_symbols.info} "${dir}" skipping npm operations since not a npm module`)
-				if (options.dryRun)
-					return console.log(`  ${log_symbols.warning} "${dir}" skipping npm operations due to dry run`)
-				return update_npm_related(dir, options)
+					.then(() => {
+						if (!is_npm_module)
+							return console.log(`  ${log_symbols.info} "${dir}" skipping npm operations since not a npm module`)
+						if (options.dryRun)
+							return console.log(`  ${log_symbols.warning} "${dir}" skipping npm operations due to dry run`)
+						return update_npm_related(dir, options)
+					})
 			})
 
 		return actions
