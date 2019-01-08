@@ -52,22 +52,24 @@ console.log('* options:', options)
 
 console.log('* Gathering list of repos...')
 repo_dirs = fs.lsDirs(repos_parent_dir).map(repo_dir => path.join(repos_parent_dir, repo_dir))
+
 console.log('* Processing repos...')
 Promise.all(
 	repo_dirs
 		//.slice(1, 2) // DEBUG
 		.map(repo_dir => process_dir(repo_dir, options))
 )
-.then(res => {
-	if (dev_npm_modules.length) console.log(`${log_symbols.warning} TODO link dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
-})
-.then(res => {
-	if (dirty_repos.length) console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(dirty_repos)))
-})
-.then(res => {
-	if (repos_with_nonstandard_branch.length) console.log(`${log_symbols.warning} You have repos in a branch:\n` + stylize_string.yellow.bold(prettify_json(repos_with_nonstandard_branch)))
-})
-.then(res => {
+.then(() => {
+	if (dev_npm_modules.length) {
+		console.log(`${log_symbols.warning} Seen own's dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
+		//console.log(`${log_symbols.warning} TODO link dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
+	}
+	if (dirty_repos.length) {
+		console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(dirty_repos)))
+	}
+	if (repos_with_nonstandard_branch.length) {
+		console.log(`${log_symbols.warning} You have repos in a branch:\n` + stylize_string.yellow.bold(prettify_json(repos_with_nonstandard_branch)))
+	}
 	console.log('Done.')
 	console.log('will exit in 3s...')
 	setTimeout(() => process.exit(0), 3000)
@@ -234,6 +236,7 @@ function update_npm_related(mod_dir, options) {
 
 			dev_npm_modules.push(package_json.name)
 
+			/* no more link since switched to a monorepo
 			console.log(`  npm link for "${mod_dir}"`)
 			return execute_and_throw(`npm`, {
 					params: 'link'.split(' '),
@@ -243,6 +246,7 @@ function update_npm_related(mod_dir, options) {
 				})
 				.then(({stdout}) => {if (stdout) console.log(stylize_string.dim(stdout))})
 				.catch(err => console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} npm link for "${mod_dir}" failed but don't really care`)))
+			*/
 		})
 
 	return actions
