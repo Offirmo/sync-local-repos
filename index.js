@@ -227,6 +227,15 @@ function update_npm_related(mod_dir, options) {
 				.then(s => package_json = s)
 		})
 
+	// delete npm modules for backup
+	/*observations
+		.then(() => {
+			if (package_json.name !== "sync-local-repos")
+				xxx
+
+		})*/
+
+
 	const actions = observations
 			.then(() => {
 			if (!_.isString(package_json.author) || !package_json.author.includes('Offirmo'))
