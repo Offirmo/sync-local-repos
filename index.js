@@ -23,6 +23,7 @@ require('@offirmo/cli-toolbox/stdout/clear-cli')()
 
 const STANDARD_BRANCHES = [
 	'master',
+	'main',
 	'gh-pages',
 ]
 
@@ -61,7 +62,7 @@ Promise.all(
 )
 .then(() => {
 	if (dev_npm_modules.length) {
-		console.log(`${log_symbols.warning} Seen own's dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
+		console.log(`${log_symbols.success} Seen own's dev npm modules:\n` + stylize_string.green.bold(prettify_json(dev_npm_modules)))
 		//console.log(`${log_symbols.warning} TODO link dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
 	}
 	if (dirty_repos.length) {
