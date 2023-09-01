@@ -1,8 +1,8 @@
 #!/bin/sh
 ':' //# http://sambal.org/?p=1014 ; exec `dirname $0`/node_modules/.bin/babel-node "$0" "$@"
-'use strict';
+'use strict'
 
-import { execute_and_throw } from './get_command_output';
+import { execute_and_throw } from './get_command_output'
 
 
 console.log('Hello world !')
@@ -56,30 +56,30 @@ repo_dirs = fs.lsDirs(repos_parent_dir).map(repo_dir => path.join(repos_parent_d
 
 console.log('* Processing repos...')
 Promise.all(
-	repo_dirs
-		//.slice(1, 2) // DEBUG
-		.map(repo_dir => process_dir(repo_dir, options))
-)
-.then(() => {
-	if (dev_npm_modules.length) {
-		console.log(`${log_symbols.success} Seen own's dev npm modules:\n` + stylize_string.green.bold(prettify_json(dev_npm_modules)))
-		//console.log(`${log_symbols.warning} TODO link dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
-	}
-	if (dirty_repos.length) {
-		console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(dirty_repos)))
-	}
-	if (repos_with_nonstandard_branch.length) {
-		console.log(`${log_symbols.warning} You have repos in a branch:\n` + stylize_string.yellow.bold(prettify_json(repos_with_nonstandard_branch)))
-	}
-	console.log('Done.')
-	console.log('will exit in 3s...')
-	setTimeout(() => process.exit(0), 3000)
-})
-.catch((err) => {
-	console.error(stylize_string.red.bold(log_symbols.error + prettify_json(err)))
-	//cli.showHelp(1)
-	process.exit(1)
-})
+		repo_dirs
+			//.slice(1, 2) // DEBUG
+			.map(repo_dir => process_dir(repo_dir, options)),
+	)
+	.then(() => {
+		if (dev_npm_modules.length) {
+			console.log(`${log_symbols.success} Seen own's dev npm modules:\n` + stylize_string.green.bold(prettify_json(dev_npm_modules)))
+			//console.log(`${log_symbols.warning} TODO link dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
+		}
+		if (dirty_repos.length) {
+			console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(dirty_repos)))
+		}
+		if (repos_with_nonstandard_branch.length) {
+			console.log(`${log_symbols.warning} You have repos in a branch:\n` + stylize_string.yellow.bold(prettify_json(repos_with_nonstandard_branch)))
+		}
+		console.log('Done.')
+		console.log('will exit in 3s...')
+		setTimeout(() => process.exit(0), 3000)
+	})
+	.catch((err) => {
+		console.error(stylize_string.red.bold(log_symbols.error + prettify_json(err)))
+		//cli.showHelp(1)
+		process.exit(1)
+	})
 
 
 function process_dir(dir, options) {
@@ -93,49 +93,49 @@ function process_dir(dir, options) {
 			console.log(`  Checking if is a git repo: "${dir}"`)
 			return execute_and_throw(`test`, {
 				params: '-d .git'.split(' '),
-				cwd: dir
+				cwd: dir,
 			})
-			.catch(() => is_git_repo = false)
+				.catch(() => is_git_repo = false)
 		})
 		.then(() => {
 			console.log(`  Checking if is an npm module: "${dir}"`)
 			return execute_and_throw(`test`, {
 				params: '-f package.json'.split(' '),
-				cwd: dir
+				cwd: dir,
 			})
 				.catch(() => is_npm_module = false)
 		})
 
-		const actions = preconditions
-			.then(() => {
-				if (!is_git_repo) {
-					// let's recurse
-					if (options.depth < 1) {
-						const subdirs = fs.lsDirs(dir).map(repo_dir => path.join(dir, repo_dir))
-						const sub_options = Object.assign({}, options, {depth: options.depth +1})
-						return Promise.all(
-							subdirs
-							.map(repo_dir => process_dir(repo_dir, sub_options))
-						)
-					}
-
-					return console.log(`  ${log_symbols.info} "${dir}" skipping git operations since not a git repo`)
+	const actions = preconditions
+		.then(() => {
+			if (!is_git_repo) {
+				// let's recurse
+				if (options.depth < 1) {
+					const subdirs = fs.lsDirs(dir).map(repo_dir => path.join(dir, repo_dir))
+					const sub_options = Object.assign({}, options, { depth: options.depth + 1 })
+					return Promise.all(
+						subdirs
+							.map(repo_dir => process_dir(repo_dir, sub_options)),
+					)
 				}
 
-				if (options.dryRun)
-					return console.log(`  ${log_symbols.warning} "${dir}" skipping git operations due to dry run`)
+				return console.log(`  ${log_symbols.info} "${dir}" skipping git operations since not a git repo`)
+			}
 
-				return update_git_related(dir, options)
-					.then(() => {
-						if (!is_npm_module)
-							return console.log(`  ${log_symbols.info} "${dir}" skipping npm operations since not a npm module`)
-						if (options.dryRun)
-							return console.log(`  ${log_symbols.warning} "${dir}" skipping npm operations due to dry run`)
-						return update_npm_related(dir, options)
-					})
-			})
+			if (options.dryRun)
+				return console.log(`  ${log_symbols.warning} "${dir}" skipping git operations due to dry run`)
 
-		return actions
+			return update_git_related(dir, options)
+				.then(() => {
+					if (!is_npm_module)
+						return console.log(`  ${log_symbols.info} "${dir}" skipping npm operations since not a npm module`)
+					if (options.dryRun)
+						return console.log(`  ${log_symbols.warning} "${dir}" skipping npm operations due to dry run`)
+					return update_npm_related(dir, options)
+				})
+		})
+
+	return actions
 }
 
 
@@ -152,25 +152,25 @@ function update_git_related(repo_dir, options) {
 				params: 'rev-parse --abbrev-ref HEAD'.split(' '),
 				cwd: repo_dir,
 			})
-			.then(({stdout}) => {
-				git_branch = stdout
-				console.log(stylize_string.dim(`  » git branch for "${repo_dir}" is "${git_branch}"`))
-				if (!STANDARD_BRANCHES.includes(git_branch)) {
-					repos_with_nonstandard_branch.push(`${repo_dir} -> branch "${git_branch}"`)
-				}
-			})
+				.then(({ stdout }) => {
+					git_branch = stdout
+					console.log(stylize_string.dim(`  » git branch for "${repo_dir}" is "${git_branch}"`))
+					if (!STANDARD_BRANCHES.includes(git_branch)) {
+						repos_with_nonstandard_branch.push(`${repo_dir} -> branch "${git_branch}"`)
+					}
+				})
 		})
 		.then(() => {
 			console.log(`  Checking git dirtiness of "${repo_dir}"`)
 			return execute_and_throw(`git`, {
 				params: 'diff-index --quiet HEAD --'.split(' '),
-				cwd: repo_dir
+				cwd: repo_dir,
 			})
-			.catch((err) => {
-				dirty_repos.push(repo_dir)
-				is_repo_dirty = true
-				console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" is dirty due to "${err.message}"\n${err.stderr}`))
-			})
+				.catch((err) => {
+					dirty_repos.push(repo_dir)
+					is_repo_dirty = true
+					console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" is dirty due to "${err.message}"\n${err.stderr}`))
+				})
 		})
 	//git log origin/master..master
 
@@ -181,12 +181,14 @@ function update_git_related(repo_dir, options) {
 				return console.log(`  ${log_symbols.warning} "${repo_dir}" skipping git fetch due to dry git`)
 			console.log(`  git fetch for "${repo_dir}"`)
 			return execute_and_throw(`git`, {
-					params: 'fetch'.split(' '),
-					//stdio: ['pipe', process.stdout, 'pipe' ],
-					cwd: repo_dir,
-					merge_stderr: true
+				params: 'fetch'.split(' '),
+				//stdio: ['pipe', process.stdout, 'pipe' ],
+				cwd: repo_dir,
+				merge_stderr: true,
+			})
+				.then(({ stdout }) => {
+					if (stdout) console.log(stylize_string.dim(`  » git fetch for "${repo_dir}" => "${stdout}"`))
 				})
-				.then(({stdout}) => {if (stdout) console.log(stylize_string.dim(`  » git fetch for "${repo_dir}" => "${stdout}"`))})
 				.catch((err) => {
 					console.log(stylize_string.red.bold(`  ${log_symbols.warning} "${repo_dir}" couldn't be fetched due to "${err.message}"\n${err.stderr}`))
 				})
@@ -199,12 +201,14 @@ function update_git_related(repo_dir, options) {
 
 			console.log(`  git pull for "${repo_dir}"`)
 			return execute_and_throw(`git`, {
-					params: 'pull'.split(' '),
-					//stdio: ['pipe', process.stdout, 'pipe' ],
-					cwd: repo_dir,
-					merge_stderr: true
+				params: 'pull'.split(' '),
+				//stdio: ['pipe', process.stdout, 'pipe' ],
+				cwd: repo_dir,
+				merge_stderr: true,
+			})
+				.then(({ stdout }) => {
+					if (stdout) console.log(stylize_string.dim(`  » git pull for "${repo_dir}" => "${stdout}"`))
 				})
-				.then(({stdout}) => {if (stdout) console.log(stylize_string.dim(`  » git pull for "${repo_dir}" => "${stdout}"`))})
 				.catch(err => {
 					if (err.stdout.includes('There is no tracking information')) return // swallow
 					console.log(stylize_string.red.bold(`  ${log_symbols.warning} "${repo_dir}" couldn't be pulled due to "${err.message}"\n${err.stderr}`))
@@ -238,7 +242,7 @@ function update_npm_related(mod_dir, options) {
 
 
 	const actions = observations
-			.then(() => {
+		.then(() => {
 			if (!_.isString(package_json.author) || !package_json.author.includes('Offirmo'))
 				return console.log(`  ${log_symbols.info} "${mod_dir}" skipping npm link since author != Offirmo`, package_json.author)
 			if (options.dryNpm)
