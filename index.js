@@ -22,9 +22,10 @@ const tildify = require('@offirmo/cli-toolbox/string/tildify')
 require('@offirmo/cli-toolbox/stdout/clear-cli')()
 
 const STANDARD_BRANCHES = [
-	'master',
-	'main',
 	'gh-pages',
+	'main',
+	'master',
+	'stable',
 ]
 
 const cli = meow(`
@@ -40,19 +41,20 @@ const cli = meow(`
       $ ./index.js .. --dry-run
 `)
 
-const repos_parent_dir = cli.input[0]
+const root_dir_well_search_in = cli.input[0]
 const options = cli.flags
 options.depth = 0
 let repo_dirs = []
 const dev_npm_modules = []
-const dirty_repos = []
-const repos_with_nonstandard_branch = []
+const reposⵧdirty = []
+const reposⵧon_nonstandard_branch = []
+const reposⵧwith_stashes = []
 
-console.log('* path:', repos_parent_dir)
+console.log('* path:', root_dir_well_search_in)
 console.log('* options:', options)
 
 console.log('* Gathering list of repos...')
-repo_dirs = fs.lsDirs(repos_parent_dir).map(repo_dir => path.join(repos_parent_dir, repo_dir))
+repo_dirs = fs.lsDirs(root_dir_well_search_in).map(repo_dir => path.join(root_dir_well_search_in, repo_dir))
 
 console.log('* Processing repos...')
 Promise.all(
@@ -65,11 +67,11 @@ Promise.all(
 			console.log(`${log_symbols.success} Seen own's dev npm modules:\n` + stylize_string.green.bold(prettify_json(dev_npm_modules)))
 			//console.log(`${log_symbols.warning} TODO link dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
 		}
-		if (dirty_repos.length) {
-			console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(dirty_repos)))
+		if (reposⵧdirty.length) {
+			console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(reposⵧdirty)))
 		}
-		if (repos_with_nonstandard_branch.length) {
-			console.log(`${log_symbols.warning} You have repos in a branch:\n` + stylize_string.yellow.bold(prettify_json(repos_with_nonstandard_branch)))
+		if (reposⵧon_nonstandard_branch.length) {
+			console.log(`${log_symbols.warning} You have repos in a branch:\n` + stylize_string.yellow.bold(prettify_json(reposⵧon_nonstandard_branch)))
 		}
 		console.log('Done.')
 		console.log('will exit in 3s...')
@@ -144,6 +146,7 @@ function update_git_related(repo_dir, options) {
 
 	let git_branch = ''
 	let is_repo_dirty = false
+	let has_stashes = false
 
 	const observations = Promise.resolve(true)
 		.then(() => {
@@ -156,7 +159,7 @@ function update_git_related(repo_dir, options) {
 					git_branch = stdout
 					console.log(stylize_string.dim(`  » git branch for "${repo_dir}" is "${git_branch}"`))
 					if (!STANDARD_BRANCHES.includes(git_branch)) {
-						repos_with_nonstandard_branch.push(`${repo_dir} -> branch "${git_branch}"`)
+						reposⵧon_nonstandard_branch.push(`${repo_dir} -> branch "${git_branch}"`)
 					}
 				})
 		})
@@ -167,9 +170,27 @@ function update_git_related(repo_dir, options) {
 				cwd: repo_dir,
 			})
 				.catch((err) => {
-					dirty_repos.push(repo_dir)
+					reposⵧdirty.push(repo_dir)
 					is_repo_dirty = true
 					console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" is dirty due to "${err.message}"\n${err.stderr}`))
+				})
+		})
+		.then(() => {
+			console.log(`  Checking git stashes for "${repo_dir}"`)
+			return execute_and_throw(`git`, {
+				params: 'stash list'.split(' '),
+				cwd: repo_dir,
+			})
+				.then(({ stdout }) => {
+					stdout = stdout.trim()
+					if(stdout.length) {
+						console.log(`git stash output`, stdout)
+						reposⵧwith_stashes.push(repo_dir)
+						console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" has stashes!`))
+					}
+				})
+				.catch((err) => {
+					console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" XXX git stash ??? "${err.message}"\n${err.stderr}`))
 				})
 		})
 	//git log origin/master..master
