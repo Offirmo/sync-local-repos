@@ -11,9 +11,10 @@
   },
   "license": "Unlicense",
   "dependencies": {
-    "@offirmo/cli-toolbox": "^0.0.4",
+    "@offirmo/cli-toolbox": "^1",
     "babel-cli": "^6.14.0",
     "babel-preset-es2015-node6": "^0.3.0",
-    "cross-spawn": "^4.0.0"
+    "cross-spawn": "^4.0.0",
+    "lodash": "^4"
   }
 }

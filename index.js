@@ -9,7 +9,7 @@ console.log('Hello world !')
 
 
 const path = require('path')
-const _ = require('@offirmo/cli-toolbox/lodash')
+const _ = require('lodash')
 const visual_tasks = require('@offirmo/cli-toolbox/stdout/visual_tasks')
 const fs = require('@offirmo/cli-toolbox/fs/extra')
 const json = require('@offirmo/cli-toolbox/fs/json')
@@ -45,7 +45,7 @@ const root_dir_well_search_in = cli.input[0]
 const options = cli.flags
 options.depth = 0
 let repo_dirs = []
-const dev_npm_modules = []
+const reposⵧoffirmo = []
 const reposⵧdirty = []
 const reposⵧon_nonstandard_branch = []
 const reposⵧwith_stashes = []
@@ -63,22 +63,28 @@ Promise.all(
 			.map(repo_dir => process_dir(repo_dir, options)),
 	)
 	.then(() => {
-		if (dev_npm_modules.length) {
-			console.log(`${log_symbols.success} Seen own's dev npm modules:\n` + stylize_string.green.bold(prettify_json(dev_npm_modules)))
-			//console.log(`${log_symbols.warning} TODO link dev npm modules:\n` + stylize_string.red.bold(prettify_json(dev_npm_modules)))
+		if (reposⵧoffirmo.length) {
+			console.log(stylize_string.bold(`${log_symbols.success} Seen Offirmo’s repositories:`))
+			console.log(stylize_string.bold.green(prettify_json(reposⵧoffirmo)))
 		}
 		if (reposⵧdirty.length) {
-			console.log(`${log_symbols.warning} You have dirty repos:\n` + stylize_string.red.bold(prettify_json(reposⵧdirty)))
+			console.log(stylize_string.bold(`${log_symbols.warning} You have dirty repos:`))
+			console.log(stylize_string.bold.red(prettify_json(reposⵧdirty)))
 		}
 		if (reposⵧon_nonstandard_branch.length) {
-			console.log(`${log_symbols.warning} You have repos in a branch:\n` + stylize_string.yellow.bold(prettify_json(reposⵧon_nonstandard_branch)))
+			console.log(stylize_string.bold(`${log_symbols.warning} You have repos in a branch:`))
+			console.log(stylize_string.bold.yellow(prettify_json(reposⵧon_nonstandard_branch)))
+		}
+		if (reposⵧwith_stashes.length) {
+			console.log(stylize_string.bold(`${log_symbols.warning} You have repos with stashes:`))
+			console.log(stylize_string.bold.yellow(prettify_json(reposⵧwith_stashes)))
 		}
 		console.log('Done.')
 		console.log('will exit in 3s...')
 		setTimeout(() => process.exit(0), 3000)
 	})
 	.catch((err) => {
-		console.error(stylize_string.red.bold(log_symbols.error + prettify_json(err)))
+		console.error(stylize_string.bold.red(log_symbols.error + prettify_json(err)))
 		//cli.showHelp(1)
 		process.exit(1)
 	})
@@ -264,14 +270,9 @@ function update_npm_related(mod_dir, options) {
 
 	const actions = observations
 		.then(() => {
-			if (!_.isString(package_json.author) || !package_json.author.includes('Offirmo'))
-				return console.log(`  ${log_symbols.info} "${mod_dir}" skipping npm link since author != Offirmo`, package_json.author)
-			if (options.dryNpm)
-				return console.log(`  ${log_symbols.warning} "${mod_dir}" skipping npm link due to dry npm`)
-
-			dev_npm_modules.push(package_json.name)
-
-			/* no more link since switched to a monorepo
+			// we used to do "npm link" here
+			// but not anymore since switched to a monorepo
+			/*
 			console.log(`  npm link for "${mod_dir}"`)
 			return execute_and_throw(`npm`, {
 					params: 'link'.split(' '),
