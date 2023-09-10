@@ -65,7 +65,60 @@ Promise.all(
 			.map(repo_dir => process_dir(repo_dir, options)),
 	)
 	.then(function display_results() {
+		console.log(`-------------------------------------------`)
+		console.log(stylize_string.bold(`${log_symbols.success} Seen ${repos.length} repositories:`))
+		if (repos.length === 0) {
+			console.log(stylize_string.bold.red("NONE please check invocation parameters!"))
+			return
+		}
 
+		repos.sort().forEach(repo_dir => {
+			let error_level = 0 // 0 1 2 no warn err
+
+			let lines = [ `📦 ${repo_dir}` ]
+
+
+			if (reposⵧoffirmo.includes(repo_dir))
+				lines[0] += `  << OFFIRMO`
+
+			if (reposⵧdirty.includes(repo_dir)) {
+				error_level = 2
+				lines.push(`   ❗ DIRTY`)
+			}
+
+			if (reposⵧon_nonstandard_branch.includes(repo_dir)) {
+				error_level = Math.max(error_level, 1)
+				lines.push(`   🔥 on a non-standard branch`)
+			}
+
+			if (reposⵧwith_stashes.includes(repo_dir)) {
+				error_level = Math.max(error_level, 1)
+				lines.push(`   🔥 has stashes`)
+			}
+
+			let logger = null
+			switch(error_level) {
+				case 0: {
+					logger = function(line) {
+						console.log(stylize_string.bold.green(line))
+					}
+				}
+				case 1: {
+					logger = function(line) {
+						console.warn(stylize_string.bold.yellow(line))
+					}
+				}
+				default:
+					logger = function(line) {
+						console.error(stylize_string.bold.red(line))
+					}
+					break
+			}
+
+			lines.forEach(logger)
+		})
+
+/*
 		console.log(stylize_string.bold(`${log_symbols.success} Seen Offirmo’s repositories:`))
 		if (reposⵧoffirmo.length === 0) {
 			console.log(stylize_string.bold.red("NONE"))
@@ -97,6 +150,7 @@ Promise.all(
 			console.log(stylize_string.bold(`${log_symbols.warning} You have repos with stashes:`))
 			console.log(stylize_string.bold.yellow(prettify_json(reposⵧwith_stashes)))
 		}
+*/
 		console.log('Done.')
 		console.log('will exit in 3s...')
 		setTimeout(() => process.exit(0), 3000)
