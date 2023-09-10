@@ -21,6 +21,7 @@ const tildify = require('@offirmo/cli-toolbox/string/tildify')
 
 require('@offirmo/cli-toolbox/stdout/clear-cli')()
 
+// repos in those branches are not considered "in branch"
 const STANDARD_BRANCHES = [
 	'gh-pages',
 	'main',
@@ -45,6 +46,7 @@ const root_dir_well_search_in = cli.input[0]
 const options = cli.flags
 options.depth = 0
 let repo_dirs = []
+const repos = []
 const reposⵧoffirmo = []
 const reposⵧdirty = []
 const reposⵧon_nonstandard_branch = []
@@ -62,20 +64,36 @@ Promise.all(
 			//.slice(1, 2) // DEBUG
 			.map(repo_dir => process_dir(repo_dir, options)),
 	)
-	.then(() => {
-		if (reposⵧoffirmo.length) {
-			console.log(stylize_string.bold(`${log_symbols.success} Seen Offirmo’s repositories:`))
+	.then(function display_results() {
+
+		console.log(stylize_string.bold(`${log_symbols.success} Seen Offirmo’s repositories:`))
+		if (reposⵧoffirmo.length === 0) {
+			console.log(stylize_string.bold.red("NONE"))
+		}
+		else {
 			console.log(stylize_string.bold.green(prettify_json(reposⵧoffirmo)))
 		}
-		if (reposⵧdirty.length) {
+
+		if (reposⵧdirty.length === 0) {
+			console.log(stylize_string.bold.green(`${log_symbols.success} You have NO dirty repos.`))
+		}
+		else {
 			console.log(stylize_string.bold(`${log_symbols.warning} You have dirty repos:`))
 			console.log(stylize_string.bold.red(prettify_json(reposⵧdirty)))
 		}
-		if (reposⵧon_nonstandard_branch.length) {
+
+		if (reposⵧon_nonstandard_branch.length === 0) {
+			console.log(stylize_string.bold.green(`${log_symbols.success} You have NO repos on a branch.`))
+		}
+		else {
 			console.log(stylize_string.bold(`${log_symbols.warning} You have repos in a branch:`))
 			console.log(stylize_string.bold.yellow(prettify_json(reposⵧon_nonstandard_branch)))
 		}
-		if (reposⵧwith_stashes.length) {
+
+		if (reposⵧwith_stashes.length === 0) {
+			console.log(stylize_string.bold.green(`${log_symbols.success} You have NO repos with stashes.`))
+		}
+		else {
 			console.log(stylize_string.bold(`${log_symbols.warning} You have repos with stashes:`))
 			console.log(stylize_string.bold.yellow(prettify_json(reposⵧwith_stashes)))
 		}
@@ -93,7 +111,7 @@ Promise.all(
 function process_dir(dir, options) {
 	console.log('* processing repo ' + tildify(dir))
 
-	let is_git_repo = true
+	let is_git_repo = true // so far
 	let is_npm_module = true
 
 	const preconditions = Promise.resolve(true)
@@ -129,6 +147,8 @@ function process_dir(dir, options) {
 
 				return console.log(`  ${log_symbols.info} "${dir}" skipping git operations since not a git repo`)
 			}
+
+			repos.push(dir)
 
 			if (options.dryRun)
 				return console.log(`  ${log_symbols.warning} "${dir}" skipping git operations due to dry run`)
