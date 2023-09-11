@@ -61,17 +61,16 @@ Promise.all(
 	)
 	.then(function display_results() {
 		console.log(`-------------------------------------------`)
-		console.log(stylize_string.bold(`${log_symbols.success} Seen ${repos.length} repositories:`))
+		console.log(log_symbols.success + stylize_string.bold(` Seen ${repos.length} repositories:`))
 		if (repos.length === 0) {
 			console.log(stylize_string.bold.red('NONE please check invocation parameters!'))
 			return
 		}
 
 		repos.sort().forEach(repo_dir => {
-			let error_level = 0 // 0 1 2 no warn err
+			let error_level = 0 // so far. 0 = no issues 1 = warnings 2 = err
 
 			let lines = [ `📦 ${repo_dir}` ]
-
 
 			if (reposⵧoffirmo.includes(repo_dir))
 				lines[0] += `  << OFFIRMO`
@@ -95,13 +94,15 @@ Promise.all(
 			switch (error_level) {
 				case 0: {
 					logger = function (line) {
-						console.log(stylize_string.bold.green(line))
+						console.log(stylize_string.green(line))
 					}
+					break
 				}
 				case 1: {
 					logger = function (line) {
 						console.warn(stylize_string.bold.yellow(line))
 					}
+					break
 				}
 				default:
 					logger = function (line) {
@@ -205,7 +206,7 @@ function process_dir(dir, options) {
 			return update_git_related(dir, options)
 				.then(() => {
 					if (!is_js_package)
-						return console.log(`  ${log_symbols.info} "${dir}" skipping npm operations since not a npm module`)
+						return console.log(`  ${log_symbols.info} "${dir}" skipping npm operations since not a npm package`)
 					if (options.dryRun)
 						return console.log(`  ${log_symbols.warning} "${dir}" skipping npm operations due to dry run`)
 					return update_npm_related(dir, options)
@@ -220,8 +221,7 @@ function update_git_related(repo_dir, options) {
 	console.log('  update_git_related()', tildify(repo_dir), options)
 
 	let git_branch = ''
-	let is_repo_dirty = false
-	let has_stashes = false
+	let is_repo_dirty = false // so far
 
 	const observations = Promise.resolve(true)
 		.then(() => {
@@ -247,7 +247,7 @@ function update_git_related(repo_dir, options) {
 				.catch((err) => {
 					reposⵧdirty.push(repo_dir)
 					is_repo_dirty = true
-					console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" is dirty due to "${err.message}"\n${err.stderr}`))
+					console.log(stylize_string.bold.yellow(`  ${log_symbols.warning} "${repo_dir}" is dirty (from return code: "${err.message}")\n${err.stderr}`))
 				})
 		})
 		.then(() => {
@@ -259,13 +259,13 @@ function update_git_related(repo_dir, options) {
 				.then(({ stdout }) => {
 					stdout = stdout.trim()
 					if (stdout.length) {
-						console.log(`git stash output`, stdout)
+						//console.log(`git stash output`, stdout) // TODO store the stashes name for display later
 						reposⵧwith_stashes.push(repo_dir)
-						console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" has stashes!`))
+						console.log(stylize_string.bold.yellow(`  ${log_symbols.warning} "${repo_dir}" has stashes!`))
 					}
 				})
 				.catch((err) => {
-					console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" XXX git stash ??? "${err.message}"\n${err.stderr}`))
+					console.log(stylize_string.bold.yellow(`  ${log_symbols.warning} "${repo_dir}" XXX git stash ??? "${err.message}"\n${err.stderr}`))
 				})
 		})
 	//git log origin/master..master
@@ -286,7 +286,7 @@ function update_git_related(repo_dir, options) {
 					if (stdout) console.log(stylize_string.dim(`  » git fetch for "${repo_dir}" => "${stdout}"`))
 				})
 				.catch((err) => {
-					console.log(stylize_string.red.bold(`  ${log_symbols.warning} "${repo_dir}" couldn't be fetched due to "${err.message}"\n${err.stderr}`))
+					console.log(stylize_string.bold.red(`  ${log_symbols.warning} "${repo_dir}" couldn't be fetched due to "${err.message}"\n${err.stderr}`))
 				})
 		})
 		.then(() => {
@@ -307,7 +307,7 @@ function update_git_related(repo_dir, options) {
 				})
 				.catch(err => {
 					if (err.stdout.includes('There is no tracking information')) return // swallow
-					console.log(stylize_string.red.bold(`  ${log_symbols.warning} "${repo_dir}" couldn't be pulled due to "${err.message}"\n${err.stderr}`))
+					console.log(stylize_string.bold.red(`  ${log_symbols.warning} "${repo_dir}" couldn't be pulled due to "${err.message}"\n${err.stderr}`))
 				})
 		})
 
