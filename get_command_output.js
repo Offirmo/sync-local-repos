@@ -1,6 +1,6 @@
 // share code executing a command and returning its output
 
-import spawn from 'cross-spawn'
+const spawn = require('cross-spawn')
 
 const MODULE_ID = 'pspawn'
 const EXTRA_SETTLING_DELAY_MS = 25 // note: 0 suffice (tested), but let's be extra-careful
@@ -142,7 +142,7 @@ function execute_and_throw(executable, options) {
 	})
 }
 
-export {
+module.exports = {
 	execute,
 	execute_and_throw,
 }

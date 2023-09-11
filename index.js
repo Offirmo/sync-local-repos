@@ -1,16 +1,9 @@
-#!/bin/sh
-':' //# http://sambal.org/?p=1014 ; exec `dirname $0`/node_modules/.bin/babel-node "$0" "$@"
 'use strict'
 
-import { execute_and_throw } from './get_command_output'
-
-
-console.log('Hello world !')
-
+const { execute_and_throw } = require('./get_command_output')
 
 const path = require('path')
 const _ = require('lodash')
-const visual_tasks = require('@offirmo/cli-toolbox/stdout/visual_tasks')
 const fs = require('@offirmo/cli-toolbox/fs/extra')
 const json = require('@offirmo/cli-toolbox/fs/json')
 const prettify_json = require('@offirmo/cli-toolbox/string/prettify-json')
@@ -20,6 +13,8 @@ const meow = require('@offirmo/cli-toolbox/framework/meow')
 const tildify = require('@offirmo/cli-toolbox/string/tildify')
 
 require('@offirmo/cli-toolbox/stdout/clear-cli')()
+
+/////////////////////////////////////////////////
 
 // repos in those branches are not considered "in branch"
 const STANDARD_BRANCHES = [
@@ -42,7 +37,7 @@ const cli = meow(`
       $ ./index.js .. --dry-run
 `)
 
-const root_dir_well_search_in = cli.input[0]
+const root_dir_we_will_search_in = cli.input[0]
 const options = cli.flags
 options.depth = 0
 let repo_dirs = []
@@ -52,11 +47,11 @@ const reposⵧdirty = []
 const reposⵧon_nonstandard_branch = []
 const reposⵧwith_stashes = []
 
-console.log('* path:', root_dir_well_search_in)
+console.log('* path:', root_dir_we_will_search_in)
 console.log('* options:', options)
 
 console.log('* Gathering list of repos...')
-repo_dirs = fs.lsDirs(root_dir_well_search_in).map(repo_dir => path.join(root_dir_well_search_in, repo_dir))
+repo_dirs = fs.lsDirs(root_dir_we_will_search_in).map(repo_dir => path.join(root_dir_we_will_search_in, repo_dir))
 
 console.log('* Processing repos...')
 Promise.all(
@@ -166,7 +161,7 @@ function process_dir(dir, options) {
 	console.log('* processing repo ' + tildify(dir))
 
 	let is_git_repo = true // so far
-	let is_npm_module = true
+	let is_js_package = true
 
 	const preconditions = Promise.resolve(true)
 		.then(() => {
@@ -178,12 +173,12 @@ function process_dir(dir, options) {
 				.catch(() => is_git_repo = false)
 		})
 		.then(() => {
-			console.log(`  Checking if is an npm module: "${dir}"`)
+			console.log(`  Checking if is a JS package: "${dir}"`)
 			return execute_and_throw(`test`, {
 				params: '-f package.json'.split(' '),
 				cwd: dir,
 			})
-				.catch(() => is_npm_module = false)
+				.catch(() => is_js_package = false)
 		})
 
 	const actions = preconditions
@@ -209,7 +204,7 @@ function process_dir(dir, options) {
 
 			return update_git_related(dir, options)
 				.then(() => {
-					if (!is_npm_module)
+					if (!is_js_package)
 						return console.log(`  ${log_symbols.info} "${dir}" skipping npm operations since not a npm module`)
 					if (options.dryRun)
 						return console.log(`  ${log_symbols.warning} "${dir}" skipping npm operations due to dry run`)
