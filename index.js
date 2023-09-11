@@ -63,7 +63,7 @@ Promise.all(
 		console.log(`-------------------------------------------`)
 		console.log(stylize_string.bold(`${log_symbols.success} Seen ${repos.length} repositories:`))
 		if (repos.length === 0) {
-			console.log(stylize_string.bold.red("NONE please check invocation parameters!"))
+			console.log(stylize_string.bold.red('NONE please check invocation parameters!'))
 			return
 		}
 
@@ -92,19 +92,19 @@ Promise.all(
 			}
 
 			let logger = null
-			switch(error_level) {
+			switch (error_level) {
 				case 0: {
-					logger = function(line) {
+					logger = function (line) {
 						console.log(stylize_string.bold.green(line))
 					}
 				}
 				case 1: {
-					logger = function(line) {
+					logger = function (line) {
 						console.warn(stylize_string.bold.yellow(line))
 					}
 				}
 				default:
-					logger = function(line) {
+					logger = function (line) {
 						console.error(stylize_string.bold.red(line))
 					}
 					break
@@ -113,39 +113,39 @@ Promise.all(
 			lines.forEach(logger)
 		})
 
-/*
-		console.log(stylize_string.bold(`${log_symbols.success} Seen Offirmo’s repositories:`))
-		if (reposⵧoffirmo.length === 0) {
-			console.log(stylize_string.bold.red("NONE"))
-		}
-		else {
-			console.log(stylize_string.bold.green(prettify_json(reposⵧoffirmo)))
-		}
+		/*
+				console.log(stylize_string.bold(`${log_symbols.success} Seen Offirmo’s repositories:`))
+				if (reposⵧoffirmo.length === 0) {
+					console.log(stylize_string.bold.red("NONE"))
+				}
+				else {
+					console.log(stylize_string.bold.green(prettify_json(reposⵧoffirmo)))
+				}
 
-		if (reposⵧdirty.length === 0) {
-			console.log(stylize_string.bold.green(`${log_symbols.success} You have NO dirty repos.`))
-		}
-		else {
-			console.log(stylize_string.bold(`${log_symbols.warning} You have dirty repos:`))
-			console.log(stylize_string.bold.red(prettify_json(reposⵧdirty)))
-		}
+				if (reposⵧdirty.length === 0) {
+					console.log(stylize_string.bold.green(`${log_symbols.success} You have NO dirty repos.`))
+				}
+				else {
+					console.log(stylize_string.bold(`${log_symbols.warning} You have dirty repos:`))
+					console.log(stylize_string.bold.red(prettify_json(reposⵧdirty)))
+				}
 
-		if (reposⵧon_nonstandard_branch.length === 0) {
-			console.log(stylize_string.bold.green(`${log_symbols.success} You have NO repos on a branch.`))
-		}
-		else {
-			console.log(stylize_string.bold(`${log_symbols.warning} You have repos in a branch:`))
-			console.log(stylize_string.bold.yellow(prettify_json(reposⵧon_nonstandard_branch)))
-		}
+				if (reposⵧon_nonstandard_branch.length === 0) {
+					console.log(stylize_string.bold.green(`${log_symbols.success} You have NO repos on a branch.`))
+				}
+				else {
+					console.log(stylize_string.bold(`${log_symbols.warning} You have repos in a branch:`))
+					console.log(stylize_string.bold.yellow(prettify_json(reposⵧon_nonstandard_branch)))
+				}
 
-		if (reposⵧwith_stashes.length === 0) {
-			console.log(stylize_string.bold.green(`${log_symbols.success} You have NO repos with stashes.`))
-		}
-		else {
-			console.log(stylize_string.bold(`${log_symbols.warning} You have repos with stashes:`))
-			console.log(stylize_string.bold.yellow(prettify_json(reposⵧwith_stashes)))
-		}
-*/
+				if (reposⵧwith_stashes.length === 0) {
+					console.log(stylize_string.bold.green(`${log_symbols.success} You have NO repos with stashes.`))
+				}
+				else {
+					console.log(stylize_string.bold(`${log_symbols.warning} You have repos with stashes:`))
+					console.log(stylize_string.bold.yellow(prettify_json(reposⵧwith_stashes)))
+				}
+		*/
 		console.log('Done.')
 		console.log('will exit in 3s...')
 		setTimeout(() => process.exit(0), 3000)
@@ -258,7 +258,7 @@ function update_git_related(repo_dir, options) {
 			})
 				.then(({ stdout }) => {
 					stdout = stdout.trim()
-					if(stdout.length) {
+					if (stdout.length) {
 						console.log(`git stash output`, stdout)
 						reposⵧwith_stashes.push(repo_dir)
 						console.log(stylize_string.yellow.bold(`  ${log_symbols.warning} "${repo_dir}" has stashes!`))
