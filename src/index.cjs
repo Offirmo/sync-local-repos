@@ -1,9 +1,5 @@
-'use strict'
+const path = require('node:path')
 
-const { execute_and_throw } = require('./get_command_output')
-
-const path = require('path')
-const _ = require('lodash')
 const fs = require('@offirmo/cli-toolbox/fs/extra')
 const json = require('@offirmo/cli-toolbox/fs/json')
 const prettify_json = require('@offirmo/cli-toolbox/string/prettify-json')
@@ -11,6 +7,9 @@ const stylize_string = require('@offirmo/cli-toolbox/string/stylize')
 const log_symbols = require('@offirmo/cli-toolbox/string/log-symbols')
 const meow = require('@offirmo/cli-toolbox/framework/meow')
 const tildify = require('@offirmo/cli-toolbox/string/tildify')
+
+const { execute_and_throw } = require('./get_command_output.cjs')
+
 
 require('@offirmo/cli-toolbox/stdout/clear-cli')()
 
