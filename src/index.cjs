@@ -24,16 +24,13 @@ const STANDARD_BRANCHES = [
 ]
 
 const cli = meow(`
-    Usage
-      $ ./index.js <path>
-
     Options
       --dry-run  don't touch anything
       --dry-git  don't do active git commands
       --dry-npm  don't do active npm commands
 
     Examples
-      $ ./index.js .. --dry-run
+      $ node ./src/index.cjs ../.. --dry-run
 `)
 
 const root_dir_we_will_search_in = cli.input[0]
