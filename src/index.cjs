@@ -14,6 +14,7 @@ const { execute_and_throw } = require('./get_command_output.cjs')
 require('@offirmo/cli-toolbox/stdout/clear-cli')()
 
 /////////////////////////////////////////////////
+const DEBUG = false
 
 // repos in those branches are not considered "in branch"
 const STANDARD_BRANCHES = [
@@ -33,6 +34,10 @@ const cli = meow(`
       $ node ./src/index.cjs ../.. --dry-run
 `)
 
+// fix "Please make sure you have the correct access rights and the repository exists."
+// https://confluence.atlassian.com/bbkb/received-error-cannot-spawn-c-program-files-putty-permission-denied-when-connecting-through-ssh-via-putty-1318884337.html
+process.env.GIT_SSH = "/usr/bin/ssh"
+
 const root_dir_we_will_search_in = cli.input[0]
 const options = cli.flags
 options.depth = 0
@@ -42,11 +47,12 @@ const reposⵧoffirmo = []
 const reposⵧdirty = []
 const reposⵧon_nonstandard_branch = []
 const reposⵧwith_stashes = []
+const reposⵧwith_fetch_pull_issues = []
 
-console.log('* path:', root_dir_we_will_search_in)
-console.log('* options:', options)
+console.log('* PARAMS: input path =', root_dir_we_will_search_in)
+console.log('* PARAMS: options =', options)
 
-console.log('* Gathering list of repos...')
+console.log('* Discovering repos...')
 repo_dirs = fs.lsDirs(root_dir_we_will_search_in).map(repo_dir => path.join(root_dir_we_will_search_in, repo_dir))
 
 console.log('* Processing repos...')
@@ -84,6 +90,11 @@ Promise.all(
 			if (reposⵧwith_stashes.includes(repo_dir)) {
 				error_level = Math.max(error_level, 1)
 				lines.push(`   🔥 has stashes`)
+			}
+
+			if (reposⵧwith_fetch_pull_issues.includes(repo_dir)) {
+				//error_level = 2
+				lines.push(`   ❗ fetch/pull issues`)
 			}
 
 			let logger = null
@@ -155,27 +166,34 @@ Promise.all(
 
 
 function process_dir(dir, options) {
-	console.log('* processing repo ' + tildify(dir))
+	console.log('* processing repo: ' + tildify(dir))
 
 	let is_git_repo = true // so far
 	let is_js_package = true
 
 	const preconditions = Promise.resolve(true)
 		.then(() => {
-			console.log(`  Checking if is a git repo: "${dir}"`)
+			console.log(`  * Checking if a git repo: "${dir}"`)
 			return execute_and_throw(`test`, {
-				params: '-d .git'.split(' '),
-				cwd: dir,
-			})
+					params: '-d .git'.split(' '),
+					cwd: dir,
+				})
 				.catch(() => is_git_repo = false)
+				.finally(() => {
+					console.log(`  » PRECONDITION✅ "${dir}" `, { is_git_repo })
+				})
 		})
 		.then(() => {
-			console.log(`  Checking if is a JS package: "${dir}"`)
+			console.log(`  * Checking if a npm package: "${dir}"`)
 			return execute_and_throw(`test`, {
-				params: '-f package.json'.split(' '),
-				cwd: dir,
-			})
+					params: '-f package.json'.split(' '),
+					cwd: dir,
+					verbose: DEBUG,
+				})
 				.catch(() => is_js_package = false)
+				.finally(() => {
+					console.log(`  » PRECONDITION✅ "${dir}" `, { is_js_package })
+				})
 		})
 
 	const actions = preconditions
@@ -223,12 +241,13 @@ function update_git_related(repo_dir, options) {
 		.then(() => {
 			console.log(`  Checking git branch of "${repo_dir}"`)
 			return execute_and_throw(`git`, {
-				params: 'rev-parse --abbrev-ref HEAD'.split(' '),
-				cwd: repo_dir,
-			})
+					params: 'rev-parse --abbrev-ref HEAD'.split(' '),
+					cwd: repo_dir,
+					verbose: DEBUG,
+				})
 				.then(({ stdout }) => {
 					git_branch = stdout
-					console.log(stylize_string.dim(`  » git branch for "${repo_dir}" is "${git_branch}"`))
+					console.log(stylize_string.dim(`  » OBSERVATION✅ git branch for "${repo_dir}" is "${git_branch}"`))
 					if (!STANDARD_BRANCHES.includes(git_branch)) {
 						reposⵧon_nonstandard_branch.push(`${repo_dir} -> branch "${git_branch}"`)
 					}
@@ -237,35 +256,34 @@ function update_git_related(repo_dir, options) {
 		.then(() => {
 			console.log(`  Checking git dirtiness of "${repo_dir}"`)
 			return execute_and_throw(`git`, {
-				params: 'diff-index --quiet HEAD --'.split(' '),
-				cwd: repo_dir,
-			})
+					params: 'diff-index --quiet HEAD --'.split(' '),
+					cwd: repo_dir,
+					verbose: DEBUG,
+				})
 				.catch((err) => {
 					reposⵧdirty.push(repo_dir)
 					is_repo_dirty = true
-					console.log(stylize_string.bold.yellow(`  ${log_symbols.warning} "${repo_dir}" is dirty (from return code: "${err.message}")\n${err.stderr}`))
+					console.log(stylize_string.bold.yellow(`  » OBSERVATION✅ ${log_symbols.warning} "${repo_dir}" is dirty (from return code: "${err.message}")\n${err.stderr}`))
 				})
 		})
 		.then(() => {
 			console.log(`  Checking git stashes for "${repo_dir}"`)
 			return execute_and_throw(`git`, {
-				params: 'stash list'.split(' '),
-				cwd: repo_dir,
-			})
+					params: 'stash list'.split(' '),
+					cwd: repo_dir,
+				})
 				.then(({ stdout }) => {
 					stdout = stdout.trim()
 					if (stdout.length) {
 						//console.log(`git stash output`, stdout) // TODO store the stashes name for display later
 						reposⵧwith_stashes.push(repo_dir)
-						console.log(stylize_string.bold.yellow(`  ${log_symbols.warning} "${repo_dir}" has stashes!`))
+						console.log(stylize_string.bold.yellow(`  » OBSERVATION✅ ${log_symbols.warning} "${repo_dir}" has stashes!`))
 					}
 				})
 				.catch((err) => {
 					console.log(stylize_string.bold.yellow(`  ${log_symbols.warning} "${repo_dir}" XXX git stash ??? "${err.message}"\n${err.stderr}`))
 				})
 		})
-	//git log origin/master..master
-
 
 	const actions = observations
 		.then(() => {
@@ -273,16 +291,18 @@ function update_git_related(repo_dir, options) {
 				return console.log(`  ${log_symbols.warning} "${repo_dir}" skipping git fetch due to dry git`)
 			console.log(`  git fetch for "${repo_dir}"`)
 			return execute_and_throw(`git`, {
-				params: 'fetch'.split(' '),
-				//stdio: ['pipe', process.stdout, 'pipe' ],
-				cwd: repo_dir,
-				merge_stderr: true,
-			})
+					params: 'fetch'.split(' '),
+					timeout: 10 * 60 * 1000, // much bigger timeout for remote ops
+					cwd: repo_dir,
+					merge_stderr: true,
+					verbose: DEBUG,
+				})
 				.then(({ stdout }) => {
 					if (stdout) console.log(stylize_string.dim(`  » git fetch for "${repo_dir}" => "${stdout}"`))
 				})
 				.catch((err) => {
 					console.log(stylize_string.bold.red(`  ${log_symbols.warning} "${repo_dir}" couldn't be fetched due to "${err.message}"\n${err.stderr}`))
+					reposⵧwith_fetch_pull_issues.push(repo_dir)
 				})
 		})
 		.then(() => {
@@ -294,9 +314,10 @@ function update_git_related(repo_dir, options) {
 			console.log(`  git pull for "${repo_dir}"`)
 			return execute_and_throw(`git`, {
 				params: 'pull'.split(' '),
-				//stdio: ['pipe', process.stdout, 'pipe' ],
+				timeout: 10 * 60 * 1000, // much bigger timeout for remote ops
 				cwd: repo_dir,
 				merge_stderr: true,
+				verbose: DEBUG,
 			})
 				.then(({ stdout }) => {
 					if (stdout) console.log(stylize_string.dim(`  » git pull for "${repo_dir}" => "${stdout}"`))
@@ -304,6 +325,7 @@ function update_git_related(repo_dir, options) {
 				.catch(err => {
 					if (err.stdout.includes('There is no tracking information')) return // swallow
 					console.log(stylize_string.bold.red(`  ${log_symbols.warning} "${repo_dir}" couldn't be pulled due to "${err.message}"\n${err.stderr}`))
+					reposⵧwith_fetch_pull_issues.push(repo_dir)
 				})
 		})
 

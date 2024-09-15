@@ -8,7 +8,9 @@
 
 	"scripts": {
 		"start": "node ./src/index.cjs ../..",
-		"test": "node ./src/index.cjs ../.. --dry-run"
+
+		"test0": "node ./src/index.cjs ../.. --dry-run",
+		"test1": "node ./src/index.cjs .."
 	},
 
 	"dependencies": {
