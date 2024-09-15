@@ -24,6 +24,7 @@ const STANDARD_BRANCHES = [
 	'stable',
 ]
 
+// TODO add verbose
 const cli = meow(`
     Options
       --dry-run  don't touch anything
