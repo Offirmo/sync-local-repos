@@ -57,7 +57,13 @@ console.log('* PARAMS: input path =', root_dir_we_will_search_in)
 console.log('* PARAMS: options =', options)
 
 console.log('* Discovering repos...')
-repo_dirs = fs.lsDirs(root_dir_we_will_search_in).map(repo_dir => path.join(root_dir_we_will_search_in, repo_dir))
+repo_dirs = fs.lsDirs(root_dir_we_will_search_in)
+	.map(repo_dir => path.join(root_dir_we_will_search_in, repo_dir))
+
+if (process.env.COMPANY) {
+	const COMPANY_lc = process.env.COMPANY.trim().toLowerCase()
+	repo_dirs = repo_dirs.filter(repo_dir => !repo_dir.toLowerCase().includes(COMPANY_lc))
+}
 
 console.log('* Processing repos...')
 Promise.all(
@@ -248,6 +254,7 @@ function update_git_related(repo_dir, options) {
 
 	const observations = Promise.resolve(true)
 		.then(() => {
+			// XXX no!!!
 			const cmd = "remote update"; // https://gist.github.com/yudistiraashadi/60fd36c7cb8ae9ed3427ab5919d2427f
 			console.log(`  "git ${cmd}" for "${repo_dir}"`);
 			return execute_and_throw(`git`, {
@@ -377,7 +384,7 @@ function update_git_related(repo_dir, options) {
 				})
 		})
 		.then(() => {
-			const cmd = "fetch"; // TODO mono branch
+			const cmd = `fetch origin ${git_branch} --prune --prune-tags`
 			if (options.dryGit)
 				return console.log(
 					`  ${log_symbols.warning} "${repo_dir}" skipping "git ${cmd}" due to dry git`
